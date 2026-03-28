@@ -1,0 +1,32 @@
+# ========== 核心框架 ==========
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+
+# ========== LangChain 生态（升级以兼容 deepseek） ==========
+# langchain-deepseek 0.1.2 需要 langchain-core>=0.3.34
+langchain-core==0.3.34
+langchain==0.3.0
+langchain-community==0.3.0
+langchain-openai==0.3.5        # deepseek 需要 >=0.3.5
+langchain-deepseek==0.1.2
+
+# ========== RAG 向量库 ==========
+chromadb==0.5.5                # 升级以兼容新 protobuf
+tiktoken==0.7.0                # langchain-openai 需要 >=0.7
+
+# ========== 联网搜索 ==========
+duckduckgo-search==4.4.3
+
+# ========== 文档处理（RAG 必需） ==========
+unstructured==0.15.0           # 文档解析
+python-magic==0.4.27           # 文件类型检测
+pdf2image==1.17.0              # PDF 处理
+pillow==10.4.0                 # 图像处理
+
+# ========== 其他工具 ==========
+aiohttp==3.9.1
+beautifulsoup4==4.12.2
+lxml==5.3.0

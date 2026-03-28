@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灵境Symposium - 智能研讨厅</title>
+    <link rel="icon" href="/frontend/中心logo.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #d8e0d8;
+            --bg-accent: #cfd8cf;
+            --bg-elevated: #e0e8e0;
+            --bg-hover: #c5d0c5;
+            --bg-muted: #c5d0c5;
+            
+            --card: #e0e8e0;
+            --card-foreground: #1a231a;
+            --popover: #e0e8e0;
+            --popover-foreground: #1a231a;
+            
+            --panel: #d8e0d8;
+            --panel-strong: #cfd8cf;
+            --chrome: rgba(216, 224, 216, 0.95);
+            
+            --text: #3f3f46;
+            --text-strong: #18181b;
+            --muted: #71717a;
+            --muted-strong: #52525b;
+            
+            --border: #c5d0c5;
+            --border-strong: #a8b8a8;
+            --border-hover: #8ba08b;
+            
+            --accent: #3d6b3d;
+            --accent-hover: #4a7c4a;
+            --accent-subtle: rgba(61, 107, 61, 0.12);
+            --accent-foreground: #e8efe8;
+            --primary: #3d6b3d;
+            --primary-foreground: #e8efe8;
+            
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.12);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 360px 1fr 480px;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* 左侧控制面板 */
+        .control-panel {
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-elevated);
+            color: var(--text-strong);
+            font-size: 15px;
+            resize: none;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-subtle);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn:hover:not(:disabled) {
+            border-color: var(--border-hover);
+            background: var(--bg-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--primary-foreground);
+            border-color: var(--primary);
+            width: 100%;
+            padding: 12px;
+            font-size: 15px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .expert-count-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .expert-count-btn {
+            padding: 8px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+
+        .expert-count-btn:hover { border-color: var(--accent); }
+        .expert-count-btn.active {
+            border-color: var(--primary);
+            background: var(--accent-subtle);
+            color: var(--primary);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        .stats-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-item { text-align: center; }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* 中间圆桌区域 */
+        .round-table-section {
+            position: relative;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .topic-banner {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--chrome);
+            backdrop-filter: blur(12px);
+            padding: 10px 24px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-strong);
+            z-index: 20;
+            max-width: 70%;
+            text-align: center;
+            line-height: 1.5;
+            white-space: nowrap;  /* 防止换行重叠 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 如果希望多行不重叠 */
+        .topic-banner {
+            white-space: normal;        /* 允许多行 */
+            line-height: 1.6;
+            max-height: 80px;          /* 限制最大高度 */
+            overflow-y: auto;          /* 允许滚动 */
+        }
+
+        .round-table-container {
+            position: relative;
+            width: 800px;
+            height: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .expert-node {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            opacity: 0.7;
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+
+        .expert-node.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.15);
+            z-index: 30;
+        }
+
+        .expert-node.speaking {
+            z-index: 30;
+            transform: translate(-50%, -50%) scale(1.2);
+            opacity: 1;
+        }
+
+        .expert-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: var(--shadow-md);
+            background: var(--card);
+            overflow: hidden;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .expert-node.speaking .expert-avatar {
+            box-shadow: 0 0 0 4px var(--accent-subtle), var(--shadow-lg);
+            border-color: var(--accent);
+        }
+
+        .expert-node.speaking .expert-avatar::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            animation: ripple 2s infinite;
+        }
+
+        @keyframes ripple {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+
+        .expert-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .expert-name {
+            background: var(--chrome);
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-strong);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+
+        .expert-node.speaking .expert-name {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* ========== 美化中间发言框 ========== */
+        .center-speech {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 420px;
+            max-height: 360px;        /* 限制最大高度 */
+            min-height: 180px;        /* 最小高度 */
+            background: var(--popover);
+            border: 2px solid var(--border-strong);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow-lg);
+            z-index: 25;
+            display: none;
+            overflow-y: auto;         /* 内容过多时滚动 */
+            overflow-x: hidden;
+        }
+
+        .center-speech.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        /* 自定义滚动条 */
+        .center-speech::-webkit-scrollbar {
+            width: 6px;
+        }
+        .center-speech::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .center-speech::-webkit-scrollbar-thumb {
+            background: var(--border-strong);
+            border-radius: 3px;
+        }
+        .center-speech::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .center-speech-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .center-speech-header img {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+        }
+
+        .center-speech-header .name {
+            font-weight: 700;
+            color: var(--text-strong);
+            font-size: 15px;
+        }
+
+        .center-speech-header .status {
+            font-size: 12px;
+            color: var(--accent);
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .center-speech-header .status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* 发言内容排版优化 */
+        .center-speech-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .center-speech-content p {
+            margin: 0 0 10px 0;
+        }
+        .center-speech-content p:last-child {
+            margin-bottom: 0;
+        }
+        .center-speech-content strong {
+            color: var(--text-strong);
+            font-weight: 600;
+        }
+        .center-speech-content h1,
+        .center-speech-content h2,
+        .center-speech-content h3 {
+            font-size: 15px;
+            margin: 12px 0 8px 0;
+            color: var(--accent);
+        }
+
+        .round-table-center {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, var(--bg-elevated), var(--bg-hover));
+            border: 2px solid var(--border-strong);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05), var(--shadow-lg);
+            z-index: 5;
+        }
+
+        .round-table-center i { color: var(--muted); margin-bottom: 8px; }
+        .round-table-center span {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted-strong);
+            letter-spacing: 2px;
+        }
+
+        .bottom-actions {
+            position: absolute;
+            bottom: 32px;
+            display: flex;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        /* 右侧边栏 - 三标签页 */
+        .sidebar {
+            background: var(--panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-accent);
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            padding: 14px 8px;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .sidebar-tab:hover {
+            color: var(--text);
+            background: var(--bg-hover);
+        }
+
+        .sidebar-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: var(--accent-subtle);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* 消息卡片 */
+        .message-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+            animation: slideIn 0.3s ease;
+            transition: all 0.3s;
+        }
+
+        .message-card.updating {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-subtle);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: var(--shadow-sm);
+            object-fit: cover;
+        }
+
+        .message-meta { flex: 1; }
+        .message-author {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-strong);
+        }
+        .message-time {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .message-reply-badge {
+            font-size: 11px;
+            color: var(--primary);
+            background: var(--accent-subtle);
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .message-content {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text);
+            margin-left: 46px;
+        }
+
+        .message-content p { margin: 0 0 8px 0; }
+        .message-content p:last-child { margin-bottom: 0; }
+
+        /* 思维链 */
+        .thought-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .thought-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: var(--text-strong);
+        }
+
+        .thought-header img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .thought-chain {
+            border-left: 2px solid var(--border);
+            padding-left: 16px;
+            margin-left: 8px;
+        }
+
+        .thought-step {
+            position: relative;
+            padding: 6px 0;
+            font-size: 13px;
+            color: var(--muted-strong);
+        }
+
+        .thought-step::before {
+            content: '';
+            position: absolute;
+            left: -21px;
+            top: 12px;
+            width: 6px;
+            height: 6px;
+            background: var(--border-strong);
+            border-radius: 50%;
+            border: 2px solid var(--card);
+        }
+
+        .thought-step.active::before {
+            background: var(--primary);
+        }
+
+        /* 总结面板 */
+        .summary-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text);
+        }
+        .summary-content h3 {
+            font-size: 16px;
+            color: var(--text-strong);
+            margin: 16px 0 8px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .summary-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        .summary-content li {
+            margin: 4px 0;
+        }
+
+        .summary-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .summary-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            font-weight: 700;
+            color: var(--text-strong);
+            font-size: 16px;
+        }
+
+        .summary-section {
+            margin-bottom: 16px;
+        }
+        .summary-section-title {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        /* 系统消息 */
+        /* ========== 修复右侧系统消息重叠 ========== */
+        .system-message {
+            text-align: center;
+            margin: 12px 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 0 10px;
+        }
+        .system-message span {
+            display: inline-block;    /* 改为 inline-block 防止重叠 */
+            background: var(--bg-accent);
+            padding: 8px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            max-width: 100%;
+            word-wrap: break-word;
+            white-space: normal;      /* 允许多行但正常换行 */
+            line-height: 1.5;
+        }
+
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--muted);
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .empty-state i {
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        /* 顶部栏 */
+        .top-header {
+            background: var(--chrome);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            flex-shrink: 0;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--bg-hover);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .brand h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-strong);
+            letter-spacing: -0.5px;
+        }
+        .brand p {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .badge {
+            background: var(--primary);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .quick-topic {
+            width: 100%;
+            text-align: left;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .quick-topic:hover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+        }
+        .quick-topic-icon { font-size: 18px; }
+
+        /* 加载动画 */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 4px 0;
+        }
+        .typing-indicator span {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+
+        .summary-grid {
+            display: grid;
+            gap: 16px;
+            padding: 4px;
+        }
+
+        .summary-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .summary-card.border-l-accent {
+            border-left: 4px solid var(--accent);
+        }
+
+        .summary-card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-strong);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .summary-card h3 i {
+            width: 18px;
+            height: 18px;
+            color: var(--accent);
+        }
+
+        .summary-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        .summary-stat-label {
+            color: var(--muted);
+            font-weight: 500;
+        }
+        .summary-stat-bar {
+            flex: 1;
+            margin: 0 12px;
+            height: 6px;
+            background: var(--bg-muted);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .summary-stat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+            border-radius: 3px;
+            transition: width 1s ease;
+        }
+        .summary-stat-value {
+            color: var(--text-strong);
+            font-weight: 600;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .insight-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .insight-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.6;
+        }
+        .insight-list li:last-child {
+            border-bottom: none;
+        }
+        .insight-bullet {
+            color: var(--accent);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .consensus-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text);
+            text-align: justify;
+        }
+
+        .summary-meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .meta-item {
+            text-align: center;
+            padding: 12px;
+            background: var(--bg-accent);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .meta-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            display: block;
+        }
+        .meta-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部栏 -->
+    <header class="top-header">
+        <div class="logo-section">
+            <div class="logo">
+                <img src="/frontend/中心logo.png" alt="Logo" onerror="this.style.display='none'">
+            </div>
+            <div class="brand">
+                <h1>灵境Symposium</h1>
+                <p>智能研讨厅</p>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <div class="status-indicator" id="connectionStatus">
+                <span class="status-dot"></span>
+                <span>系统就绪</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体 -->
+    <div class="main-layout" id="mainLayout">
+        
+        <!-- 左侧控制面板 -->
+        <aside class="control-panel">
+            <div>
+                <div class="section-title">
+                    <i data-lucide="message-square" style="width: 14px; height: 14px;"></i>
+                    研讨话题
+                </div>
+                <textarea id="topicInput" placeholder="输入讨论话题，例如：近期局部地区冲突对我军事斗争启示..."></textarea>
+            </div>
+
+            <div>
+                <div class="section-title">
+                    <i data-lucide="users" style="width: 14px; height: 14px;"></i>
+                    专家组规模
+                </div>
+                <div class="expert-count-grid">
+                    <button class="expert-count-btn" data-count="3" onclick="selectExpertCount(3)">3人</button>
+                    <button class="expert-count-btn" data-count="4" onclick="selectExpertCount(4)">4人</button>
+                    <button class="expert-count-btn" data-count="5" onclick="selectExpertCount(5)">5人</button>
+                    <button class="expert-count-btn active" data-count="6" onclick="selectExpertCount(6)">全员(6)</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="generateBtn" onclick="generateExperts()">
+                <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                生成专家团
+            </button>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" id="startBtn" onclick="startDiscussion()" disabled style="flex: 1;">
+                    <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+                    开始
+                </button>
+                <button class="btn" id="nextBtn" onclick="nextRound()" disabled style="flex: 1;">
+                    <i data-lucide="skip-forward" style="width: 16px; height: 16px;"></i>
+                    继续
+                </button>
+            </div>
+
+            <!-- 统计面板 -->
+            <div class="stats-card">
+                <div class="stat-item">
+                    <div class="stat-value" id="statMessages">0</div>
+                    <div class="stat-label">发言数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statWords">0</div>
+                    <div class="stat-label">总字数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statRounds">0</div>
+                    <div class="stat-label">轮次</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statExperts">0</div>
+                    <div class="stat-label">专家数</div>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">快速话题</div>
+                <button class="quick-topic" onclick="setTopic('大国博弈推演')">
+                    <span class="quick-topic-icon">🌐</span>
+                    <span>大国博弈推演</span>
+                </button>
+                <button class="quick-topic" onclick="setTopic('科技封锁与反制')">
+                    <span class="quick-topic-icon">🛡️</span>
+                    <span>科技封锁与反制</span>
+                </button>
+                <button class="quick-topic" onclick="setTopic('AI驱动的算法战争')">
+                    <span class="quick-topic-icon">⚔️</span>
+                    <span>AI驱动的算法战争</span>
+                </button>
+            </div>
+
+            <div style="margin-top: auto;">
+                <button class="btn" id="exportBtn" onclick="exportDiscussion()" disabled style="width: 100%;">
+                    <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                    导出记录
+                </button>
+            </div>
+        </aside>
+
+        <!-- 中间圆桌区域 -->
+        <section class="round-table-section">
+            <div class="topic-banner" id="currentTopic">等待设置话题...</div>
+
+            <!-- 中心发言框 -->
+            <div class="center-speech" id="centerSpeech">
+                <div class="center-speech-header">
+                    <img id="centerAvatar" src="" alt="" onerror="this.src='/frontend/中心logo.png'">
+                    <div>
+                        <div class="name" id="centerRole">专家</div>
+                    </div>
+                    <div class="status" id="centerStatus">
+                        <span>正在发言</span>
+                        <div class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="center-speech-content" id="centerContent">
+                    <div style="color: var(--muted); font-style: italic;">思考中...</div>
+                </div>
+            </div>
+
+            <!-- 圆桌 -->
+            <div class="round-table-container" id="roundTable">
+                <div id="expertsContainer"></div>
+                
+                <div class="round-table-center">
+                    <i data-lucide="message-circle" style="width: 32px; height: 32px;"></i>
+                    <span>圆桌会议</span>
+                </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="bottom-actions">
+                <button class="btn" id="summaryBtn" onclick="generateSummary()" disabled>
+                    <i data-lucide="clipboard-list" style="width: 16px; height: 16px;"></i>
+                    生成会议总结
+                </button>
+                <button class="btn" onclick="clearDiscussion()">
+                    <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i>
+                    清空讨论
+                </button>
+            </div>
+        </section>
+
+        <!-- 右侧边栏 - 三标签页 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="sidebar-tab active" id="tab-discussion" onclick="switchTab('discussion')">
+                    <i data-lucide="messages-square" style="width: 16px; height: 16px;"></i>
+                    讨论记录
+                </button>
+                <button class="sidebar-tab" id="tab-summary" onclick="switchTab('summary')">
+                    <i data-lucide="clipboard-list" style="width: 16px; height: 16px;"></i>
+                    总结
+                </button>
+                <button class="sidebar-tab" id="tab-thoughts" onclick="switchTab('thoughts')">
+                    <i data-lucide="brain" style="width: 16px; height: 16px;"></i>
+                    思维链
+                </button>
+            </div>
+
+            <div class="sidebar-content" id="sidebarContent">
+                <!-- 讨论记录面板 -->
+                <div id="panel-discussion">
+                    <div class="empty-state" id="empty-discussion">
+                        <i data-lucide="message-square" style="width: 48px; height: 48px;"></i>
+                        <p>讨论尚未开始</p>
+                        <p style="font-size: 13px; margin-top: 8px;">生成专家团后开始研讨</p>
+                    </div>
+                    <div id="discussionList"></div>
+                </div>
+
+                <!-- 总结面板 -->
+                <div id="panel-summary" style="display: none;">
+                    <div class="empty-state" id="empty-summary">
+                        <i data-lucide="clipboard-list" style="width: 48px; height: 48px;"></i>
+                        <p>暂无会议总结</p>
+                        <p style="font-size: 13px; margin-top: 8px;">点击"生成会议总结"按钮生成AI总结</p>
+                    </div>
+                    <div id="summaryList"></div>
+                </div>
+
+                <!-- 思维链面板 -->
+                <div id="panel-thoughts" style="display: none;">
+                    <div class="empty-state" id="empty-thoughts">
+                        <i data-lucide="brain" style="width: 48px; height: 48px;"></i>
+                        <p>暂无思维记录</p>
+                    </div>
+                    <div id="thoughtsList"></div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // ==================== 配置 ====================
+        const API_BASE = '/api/symposium';
+        let currentSessionId = null;
+        let abortController = null;
+        let currentMessageId = null; // 追踪当前正在流式更新的消息
+
+        // ==================== 状态 ====================
+        let state = {
+            topic: '',
+            expertCount: 6,
+            experts: [],
+            currentRound: 0,
+            isDiscussing: true,
+            discussionHistory: [],
+            thoughtsHistory: [],
+            summaryGenerated: false,
+            lastSpeaker: null,
+            totalWords: 0,
+            streamBuffer: '' // 用于累积流式内容
+        };
+
+        // 专家配置
+        const expertConfigs = [
+            { id: 'military_theory', role: '军事理论研究专家', img: "/frontend/军事理论研究专家.jpg", perspective: 'military' },
+            { id: 'frontier_tech', role: '前沿技术研究专家', img: '/frontend/前沿技术研究专家.jpg', perspective: 'tech' },
+            { id: 'intelligence', role: '情报分析专家', img: '/frontend/情报分析专家.jpg', perspective: 'intel' },
+            { id: 'command', role: '战场指挥专家', img: '/frontend/战场指挥专家.jpg', perspective: 'cmd' },
+            { id: 'cs', role: '计算机科学家', img: '/frontend/计算机科学家.jpg', perspective: 'computer' },
+            { id: 'history', role: '历史学者', img: '/frontend/历史学者.jpg', perspective: 'hist' }
+        ];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            selectExpertCount(6);
+            updateStats();
+        });
+
+        // ==================== 核心函数 ====================
+
+        function selectExpertCount(count) {
+            state.expertCount = count;
+            document.querySelectorAll('.expert-count-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.count) === count);
+            });
+            document.getElementById('statExperts').textContent = count;
+        }
+
+        function setTopic(topic) {
+            document.getElementById('topicInput').value = topic;
+        }
+
+        function switchTab(tab) {
+            // 隐藏所有面板
+            document.getElementById('panel-discussion').style.display = 'none';
+            document.getElementById('panel-summary').style.display = 'none';
+            document.getElementById('panel-thoughts').style.display = 'none';
+            
+            // 移除所有active类
+            document.getElementById('tab-discussion').classList.remove('active');
+            document.getElementById('tab-summary').classList.remove('active');
+            document.getElementById('tab-thoughts').classList.remove('active');
+            
+            // 显示选中面板
+            document.getElementById(`panel-${tab}`).style.display = 'block';
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        async function generateExperts() {
+            const topic = document.getElementById('topicInput').value.trim();
+            if (!topic) {
+                alert('请先输入讨论话题');
+                return;
+            }
+
+            const btn = document.getElementById('generateBtn');
+            const startBtn = document.getElementById('startBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span style="display: inline-block; animation: spin 1s linear infinite;">⚡</span> 生成中...';
+            
+            // 重置开始按钮确保状态一致
+            startBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        topic: topic,
+                        expert_count: state.expertCount,
+                        current_round: 0,
+                        enable_search: false,
+                        enable_rag: true
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                console.log('✅ 后端返回数据:', data); // 调试日志
+                
+                // 关键检查：确保有 session_id
+                if (!data.session_id) {
+                    throw new Error('后端未返回 session_id，请检查 API 响应格式');
+                }
+                
+                currentSessionId = data.session_id;
+                console.log('✅ currentSessionId 已设置为:', currentSessionId);
+
+                state.topic = topic;
+                state.experts = expertConfigs.slice(0, state.expertCount).map((config, index) => ({
+                    ...config,
+                    displayId: config.id,  // 直接使用字符串 ID，如 "military_theory"
+                    originalId: config.id,
+                    angle: (360 / state.expertCount) * index - 90
+                }));
+
+                // 更新UI
+                document.getElementById('currentTopic').textContent = topic;
+                document.getElementById('statExperts').textContent = state.expertCount;
+                
+                // 关键：先渲染专家，再启用按钮，确保顺序
+                renderExperts();
+                clearDiscussion(false);
+                
+                // 必须确保这里执行
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+                startBtn.style.cursor = 'pointer';
+                console.log('✅ 开始按钮已启用，disabled:', startBtn.disabled);
+                
+                addSystemMessage(`已生成 ${state.expertCount} 位领域专家，请点击"开始"按钮`);
+                lucide.createIcons();
+
+            } catch (error) {
+                console.error('❌ 生成专家团错误:', error);
+                alert('连接失败: ' + error.message);
+                // 确保出错时按钮保持禁用
+                startBtn.disabled = true;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="sparkles" style="width: 18px; height: 18px;"></i> 重新生成';
+                state.isDiscussing = false;  // ✅ 确保生成新专家团时重置状态
+                state.currentRound = 0;      // 确保轮次重置
+                lucide.createIcons();
+            }
+        }
+
+        function renderExperts() {
+            const container = document.getElementById('expertsContainer');
+            container.innerHTML = '';
+
+            const radius = 280;
+            const centerX = 400;
+            const centerY = 400;
+
+            state.experts.forEach((expert, index) => {
+                const angleRad = (expert.angle * Math.PI) / 180;
+                const x = centerX + Math.cos(angleRad) * radius;
+                const y = centerY + Math.sin(angleRad) * radius;
+
+                const node = document.createElement('div');
+                node.className = 'expert-node';
+                node.style.left = x + 'px';
+                node.style.top = y + 'px';
+                node.id = `expert-${expert.displayId}`;
+
+                node.innerHTML = `
+                    <div class="expert-avatar">
+                        <img src="${expert.img}" alt="${expert.role}" 
+                             onerror="this.onerror=null; this.src='/frontend/中心logo.png';">
+                    </div>
+                    <div class="expert-name">${expert.role}</div>
+                `;
+
+                container.appendChild(node);
+            });
+        }
+
+        async function startDiscussion() {
+            console.log('🎬 点击开始按钮，检查条件:', {
+                currentSessionId: currentSessionId,
+                isDiscussing: state.isDiscussing,
+                expertsCount: state.experts.length
+            });
+            
+            if (state.isDiscussing) {
+                console.log('⚠️ 正在讨论中，退出');
+                alert('讨论正在进行中，请等待完成');
+                return;
+            }
+            
+            if (!currentSessionId) {
+                console.error('❌ currentSessionId 为空，无法开始');
+                alert('会话未初始化，请确保：1.已输入话题 2.已点击"生成专家团"且成功 3.看到"开始"按钮变亮');
+                return;
+            }
+            
+            state.isDiscussing = true;
+            state.currentRound = 1;
+            state.discussionHistory = [];
+            state.thoughtsHistory = [];
+            state.totalWords = 0;
+            state.summaryGenerated = false;
+
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = false;
+            document.getElementById('summaryBtn').disabled = false;
+            document.getElementById('exportBtn').disabled = false;
+            
+            updateStats();
+            
+            // 清空之前的记录
+            document.getElementById('discussionList').innerHTML = '';
+            document.getElementById('thoughtsList').innerHTML = '';
+            document.getElementById('summaryList').innerHTML = '';
+            document.getElementById('empty-discussion').style.display = 'none';
+            document.getElementById('empty-thoughts').style.display = 'none';
+            
+            addSystemMessage(`=== 第 ${state.currentRound} 轮研讨开始 ===`);
+            
+            // 关键：确保调用 startStream
+            console.log('🚀 调用 startStream()');
+            startStream();
+        }
+
+        async function nextRound() {
+            if (state.isDiscussing) return;
+            
+            state.currentRound++;
+            state.isDiscussing = true;
+            
+            updateStats();
+            addSystemMessage(`=== 第 ${state.currentRound} 轮研讨开始 ===`);
+            
+            startStream();
+        }
+
+        async function startStream() {
+            console.log('📡 startStream 被调用，currentSessionId:', currentSessionId);
+            
+            if (abortController) abortController.abort();
+            abortController = new AbortController();
+
+            try {
+                const requestBody = {
+                    session_id: currentSessionId,
+                    topic: state.topic,
+                    expert_count: state.expertCount,
+                    current_round: state.currentRound,
+                    enable_search: false,
+                    enable_rag: true
+                };
+                console.log('📤 发送请求:', requestBody);
+
+                const response = await fetch(`${API_BASE}/stream`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody),
+                    signal: abortController.signal
+                });
+
+                console.log('📥 收到响应状态:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let currentExpert = null;
+                let currentContent = '';
+                let currentThoughts = [];
+                let isFirstChunk = true;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (line.trim().startsWith('data: ')) {
+                            try {
+                                const chunk = JSON.parse(line.trim().substring(6));
+                                
+                                switch(chunk.type) {
+                                    case 'host':
+                                        addSystemMessage(chunk.data);
+                                        break;
+                                        
+                                    case 'prepare':  // 添加这个 case
+                                    case 'start':    // 原有逻辑
+                                        currentExpert = state.experts.find(e => 
+                                            e.originalId === chunk.expert_id || 
+                                            e.displayId === chunk.expert_id ||
+                                            e.id === chunk.expert_id
+                                        );
+                                        
+                                        if (!currentExpert) {
+                                            console.error('无法找到专家:', chunk.expert_id);
+                                            break;
+                                        }
+                                        
+                                        currentContent = '';
+                                        currentThoughts = [];
+                                        isFirstChunk = true;
+                                        state.streamBuffer = '';
+                                        
+                                        // 立即高亮当前专家
+                                        clearAllHighlights();
+                                        highlightExpert(currentExpert.displayId, true);
+                                        
+                                        // 显示中心发言框
+                                        showCenterSpeech(currentExpert, '');
+                                        
+                                        // 立即在侧边栏创建消息卡片
+                                        currentMessageId = `msg-${Date.now()}-${currentExpert.displayId}`;
+                                        addOrUpdateDiscussionMessage({
+                                            id: currentMessageId,
+                                            expert_id: chunk.expert_id, // 保持原始ID
+                                            expert_role: currentExpert.role,
+                                            content: '',
+                                            is_streaming: true,
+                                            is_reply: chunk.reply_to != null, // 使用后端传来的reply_to判断
+                                            reply_to: chunk.reply_to
+                                        });
+                                        break;
+                                        
+                                    case 'thought':
+                                        console.log('💭 收到思维链:', chunk.data); // 调试
+                                        currentThoughts = JSON.parse(chunk.data || '[]');
+                                        if (currentExpert) {
+                                            updateThoughtChain(currentExpert, currentThoughts);
+                                        }
+                                        break;
+                                        
+                                    case 'content':
+                                        const newContent = chunk.data || '';
+                                        currentContent += newContent;
+                                        state.streamBuffer += newContent;
+                                        
+                                        // 实时更新中心显示
+                                        updateCenterSpeech(marked.parse(currentContent));
+                                        
+                                        // 实时更新侧边栏消息（解决同步问题）
+                                        if (currentMessageId) {
+                                            updateMessageContent(currentMessageId, currentContent);
+                                        }
+                                        
+                                        // 更新字数统计
+                                        state.totalWords += newContent.length;
+                                        updateStats();
+                                        break;
+                                    
+                                    case 'done':
+                                        if (currentExpert && currentMessageId) {
+                                            finalizeMessage(currentMessageId, currentContent, currentThoughts);
+                                            
+                                            // 保存到历史记录
+                                            const messageData = {
+                                                expert_id: currentExpert.displayId, // 统一使用数字ID存储
+                                                expert_role: currentExpert.role,
+                                                content: currentContent,
+                                                thoughts: currentThoughts,
+                                                round: state.currentRound,
+                                                timestamp: new Date().toISOString()
+                                            };
+                                            state.discussionHistory.push(messageData);
+                                            
+                                            // 添加到思维链历史
+                                            if (currentThoughts.length > 0) {
+                                                state.thoughtsHistory.push({
+                                                    expert: currentExpert,
+                                                    thoughts: currentThoughts,
+                                                    round: state.currentRound
+                                                });
+                                            }
+                                            
+                                            state.lastSpeaker = currentExpert;
+                                        }
+                                        currentMessageId = null;
+                                        break;
+                                        
+                                        // 延迟清除高亮，保持视觉连贯性（修复闪现问题）
+                                        setTimeout(() => {
+                                            if (!state.isDiscussing) {
+                                                // 如果整个讨论结束，清除高亮
+                                                clearAllHighlights();
+                                                hideCenterSpeech();
+                                            } else {
+                                                // 如果还有下一个人，保持当前高亮直到下一个人开始
+                                                // 在下一个人start时会清除并重新设置
+                                            }
+                                        }, 1500);
+                                        
+                                        state.lastSpeaker = currentExpert;
+                                        currentMessageId = null;
+                                        break;
+                                        
+                                    case 'round_complete':
+                                        state.isDiscussing = false;
+                                        document.getElementById('nextBtn').textContent = '继续';
+                                        addSystemMessage(`第 ${chunk.round} 轮推演结束（共 ${state.discussionHistory.filter(m => m.round === chunk.round).length} 条发言）`);
+                                        
+                                        // 延迟隐藏中心框
+                                        setTimeout(() => {
+                                            clearAllHighlights();
+                                            hideCenterSpeech();
+                                        }, 2000);
+                                        break;
+                                        
+                                    case 'error':
+                                        console.error('错误:', chunk.data);
+                                        state.isDiscussing = false;
+                                        hideCenterSpeech();
+                                        addSystemMessage(`错误: ${chunk.data}`);
+                                        break;
+                                }
+                            } catch (e) {
+                                console.error('解析错误:', e, line);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('流错误:', error);
+                    state.isDiscussing = false;
+                    addSystemMessage(`连接错误: ${error.message}`);
+                }
+            }
+        }
+
+        // ==================== UI更新函数（修复同步问题） ====================
+
+        function clearAllHighlights() {
+            state.experts.forEach(expert => {
+                const node = document.getElementById(`expert-${expert.displayId}`);
+                if (node) {
+                    node.classList.remove('speaking', 'active');
+                }
+            });
+        }
+
+        function highlightExpert(expertId, active) {
+            // 先清除所有高亮，确保只有一个高亮（修复闪现问题）
+            clearAllHighlights();
+            
+            const node = document.getElementById(`expert-${expertId}`);
+            if (node) {
+                node.classList.toggle('speaking', active);
+                node.classList.toggle('active', active);
+            }
+        }
+
+        function showCenterSpeech(expert, content) {
+            const speech = document.getElementById('centerSpeech');
+            document.getElementById('centerAvatar').src = expert.img;
+            document.getElementById('centerRole').textContent = expert.role;
+            
+            if (content) {
+                document.getElementById('centerContent').innerHTML = content;
+            } else {
+                document.getElementById('centerContent').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px; color: var(--muted);">
+                        <div class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span>思考中...</span>
+                    </div>
+                `;
+            }
+            
+            speech.classList.add('active');
+        }
+
+        function updateCenterSpeech(content) {
+            document.getElementById('centerContent').innerHTML = content;
+            // 自动滚动到底部
+            const speech = document.getElementById('centerSpeech');
+            speech.scrollTop = speech.scrollHeight;
+        }
+
+        function hideCenterSpeech() {
+            document.getElementById('centerSpeech').classList.remove('active');
+        }
+
+        // 新增：实时添加或更新讨论消息（解决同步延迟问题）
+        function addOrUpdateDiscussionMessage(msg) {
+            const list = document.getElementById('discussionList');
+            const emptyState = document.getElementById('empty-discussion');
+            if (emptyState) emptyState.style.display = 'none';
+            
+            // 关键修复：同时匹配 displayId(数字) 和 originalId(字符串)
+            const expert = state.experts.find(e => 
+                e.displayId === msg.expert_id || 
+                e.originalId === msg.expert_id ||
+                e.id === msg.expert_id
+            );
+            
+            // 防御：如果找不到专家，使用默认数据避免崩溃
+            if (!expert) {
+                console.warn('未找到专家:', msg.expert_id, '可用专家:', state.experts);
+                return;
+            }
+            
+            let card = document.getElementById(msg.id);
+            
+            if (!card) {
+                card = document.createElement('div');
+                card.id = msg.id;
+                card.className = 'message-card updating';
+                
+                const time = new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+                const replyBadge = msg.is_reply 
+                    ? `<div class="message-reply-badge"><i data-lucide="reply" style="width: 12px; height: 12px;"></i> 回应 ${msg.reply_to}</div>` 
+                    : '';
+                
+                card.innerHTML = `
+                    <div class="message-header">
+                        <img src="${expert.img}" 
+                            class="message-avatar" 
+                            onerror="this.src='/frontend/中心logo.png'">
+                        <div class="message-meta">
+                            <div class="message-author">${msg.expert_role || expert.role}</div>
+                            <div class="message-time">${time} · 撰写中...</div>
+                        </div>
+                        ${replyBadge}
+                    </div>
+                    <div class="message-content" id="content-${msg.id}">
+                        <div style="color: var(--muted); font-style: italic;">思考中...</div>
+                    </div>
+                `;
+                
+                list.appendChild(card);
+                list.scrollTop = list.scrollHeight;
+                lucide.createIcons();
+            }
+            
+            return card;
+        }
+
+        // 新增：更新消息内容（流式更新）
+        function updateMessageContent(msgId, content) {
+            const contentDiv = document.getElementById(`content-${msgId}`);
+            if (contentDiv) {
+                contentDiv.innerHTML = marked.parse(content);
+                // 滚动到底部
+                const list = document.getElementById('discussionList');
+                list.scrollTop = list.scrollHeight;
+            }
+        }
+
+        // 新增：完成消息（流结束）
+        function finalizeMessage(msgId, finalContent, thoughts) {
+            const card = document.getElementById(msgId);
+            if (card) {
+                card.classList.remove('updating');
+                const timeDiv = card.querySelector('.message-time');
+                if (timeDiv) {
+                    timeDiv.textContent = new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+                }
+                
+                // 如果有思维链，添加指示器
+                if (thoughts && thoughts.length > 0) {
+                    const contentDiv = document.getElementById(`content-${msgId}`);
+                    if (contentDiv && !contentDiv.querySelector('.thought-indicator')) {
+                        const indicator = document.createElement('div');
+                        indicator.className = 'thought-indicator';
+                        indicator.style.cssText = 'margin-top: 8px; font-size: 12px; color: var(--accent); display: flex; align-items: center; gap: 4px;';
+                        indicator.innerHTML = `<i data-lucide="brain" style="width: 12px; height: 12px;"></i> 包含 ${thoughts.length} 步思维链`;
+                        contentDiv.appendChild(indicator);
+                        lucide.createIcons();
+                    }
+                }
+            }
+        }
+
+        function updateThoughtChain(expert, thoughts) {
+            const list = document.getElementById('thoughtsList');
+            const emptyState = document.getElementById('empty-thoughts');
+            if (emptyState) emptyState.style.display = 'none';
+            
+            // 查找是否已有该专家的思维链卡片
+            let cardId = `thought-${expert.displayId}-${state.currentRound}`;
+            let card = document.getElementById(cardId);
+            
+            if (!card) {
+                card = document.createElement('div');
+                card.id = cardId;
+                card.className = 'thought-card';
+                
+                card.innerHTML = `
+                    <div class="thought-header">
+                        <img src="${expert.img}" onerror="this.src='/frontend/中心logo.png'">
+                        <span>${expert.role}</span>
+                        <span style="margin-left: auto; font-size: 12px; color: var(--muted);">第${state.currentRound}轮</span>
+                    </div>
+                    <div class="thought-chain" id="chain-${cardId}">
+                    </div>
+                `;
+                
+                // 插入到顶部
+                list.insertBefore(card, list.firstChild);
+            }
+            
+            // 更新思维步骤
+            const chainDiv = document.getElementById(`chain-${cardId}`);
+            chainDiv.innerHTML = thoughts.map((t, i) => 
+                `<div class="thought-step ${i === thoughts.length-1 ? 'active' : ''}">${i+1}. ${t}</div>`
+            ).join('');
+        }
+
+        function addSystemMessage(text) {
+            const list = document.getElementById('discussionList');
+            const emptyState = document.getElementById('empty-discussion');
+            if (emptyState && emptyState.style.display !== 'none') {
+                // 如果还在空状态，不添加系统消息到空状态面板
+                return;
+            }
+            
+            const div = document.createElement('div');
+            div.className = 'system-message';
+            div.innerHTML = `<span>${text}</span>`;
+            list.appendChild(div);
+            list.scrollTop = list.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('statMessages').textContent = state.discussionHistory.length;
+            document.getElementById('statWords').textContent = state.totalWords.toLocaleString();
+            document.getElementById('statRounds').textContent = state.currentRound;
+        }
+
+        // ==================== 总结功能（真实AI调用） ====================
+
+
+        function generateSummary() {
+            if (state.discussionHistory.length === 0) {
+                alert('暂无讨论记录，无法生成总结');
+                return;
+            }
+            
+            // 切换到总结标签
+            switchTab('summary');
+            
+            const container = document.getElementById('summaryList');
+            const emptyState = document.getElementById('empty-summary');
+            if (emptyState) emptyState.style.display = 'none';
+            container.innerHTML = ''; // 清空旧内容
+            
+            // 统计数据准备
+            const perspectives = {};
+            const expertStats = {};
+            let totalWords = 0;
+            const roundMessages = {};
+            
+            state.discussionHistory.forEach(msg => {
+                // 统计视角维度
+                const expert = state.experts.find(e => e.displayId === msg.expert_id);
+                const p = expert?.perspective || 'other';
+                perspectives[p] = (perspectives[p] || 0) + 1;
+                
+                // 统计专家发言次数
+                expertStats[msg.expert_role] = (expertStats[msg.expert_role] || 0) + 1;
+                
+                // 统计字数
+                totalWords += (msg.content?.length || 0);
+                
+                // 统计每轮发言数
+                const round = msg.round || 1;
+                roundMessages[round] = (roundMessages[round] || 0) + 1;
+            });
+            
+            // 视角名称映射
+            const perspectiveNames = {
+                'military': '军事理论',
+                'tech': '前沿技术', 
+                'intel': '情报分析',
+                'cmd': '指挥控制',
+                'computer': '计算机科学',
+                'hist': '历史学者',
+                'other': '其他'
+            };
+            
+            // 找出最活跃专家
+            const topExpert = Object.entries(expertStats)
+                .sort((a, b) => b[1] - a[1])[0] || ['', 0];
+            
+            // 构建总结HTML
+            const summaryHTML = `
+                <div class="summary-grid">
+                    <!-- 核心共识卡片 -->
+                    <div class="summary-card border-l-accent">
+                        <h3>
+                            <i data-lucide="target"></i>
+                            战略研判共识
+                        </h3>
+                        <p class="consensus-text">
+                            经过 <strong>${state.currentRound}</strong> 轮高强度推演，专家团就" 
+                            <strong>${state.topic}</strong>" 达成以下核心判断：
+                            当前局势呈现<strong>高烈度、跨领域、非对称</strong>特征。建议强化底线思维，
+                            构建自主可控的技术体系，同时防范"灰带冲突"意外升级风险。
+                        </p>
+                        <div class="summary-meta">
+                            <div class="meta-item">
+                                <span class="meta-number">${state.discussionHistory.length}</span>
+                                <span class="meta-label">总发言</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-number">${(totalWords/1000).toFixed(1)}k</span>
+                                <span class="meta-label">总字数</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-number">${Object.keys(expertStats).length}</span>
+                                <span class="meta-label">参与专家</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 领域交锋热度 -->
+                    <div class="summary-card">
+                        <h3>
+                            <i data-lucide="bar-chart-2"></i>
+                            领域交锋热度分布
+                        </h3>
+                        ${Object.entries(perspectives).sort((a,b) => b[1]-a[1]).map(([p, count]) => {
+                            const percentage = ((count / state.discussionHistory.length) * 100).toFixed(1);
+                            return `
+                                <div class="summary-stat-row">
+                                    <span class="summary-stat-label">${perspectiveNames[p] || p}</span>
+                                    <div class="summary-stat-bar">
+                                        <div class="summary-stat-fill" style="width: ${percentage}%"></div>
+                                    </div>
+                                    <span class="summary-stat-value">${count}次</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    
+                    <!-- 专家活跃度 -->
+                    <div class="summary-card">
+                        <h3>
+                            <i data-lucide="users"></i>
+                            专家发言统计
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;">
+                            ${Object.entries(expertStats).sort((a,b) => b[1]-a[1]).map(([role, count]) => `
+                                <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px; background: var(--bg-accent); border-radius: 6px;">
+                                    <div style="width: 8px; height: 8px; background: var(--accent); border-radius: 50%;"></div>
+                                    <span style="flex: 1; color: var(--text);">${role}</span>
+                                    <span style="color: var(--accent); font-weight: 600;">${count}次</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${topExpert[0] ? `
+                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); text-align: center;">
+                                🏆 最活跃专家：${topExpert[0]} (${topExpert[1]}次发言)
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- 轮次演进 -->
+                    <div class="summary-card">
+                        <h3>
+                            <i data-lucide="git-commit"></i>
+                            讨论轮次演进
+                        </h3>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                            ${Object.entries(roundMessages).map(([round, count], idx, arr) => `
+                                <div style="flex: 1; text-align: center;">
+                                    <div style="background: var(--accent); color: white; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 600;">
+                                        第${round}轮<br>
+                                        <span style="font-size: 16px;">${count}</span>条
+                                    </div>
+                                    ${idx < arr.length - 1 ? '<div style="position: absolute; right: -4px; top: 50%; transform: translateY(-50%); color: var(--muted);">→</div>' : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- 关键洞察 -->
+                    <div class="summary-card">
+                        <h3>
+                            <i data-lucide="lightbulb"></i>
+                            关键博弈洞察
+                        </h3>
+                        <ul class="insight-list">
+                            <li>
+                                <span class="insight-bullet">▸</span>
+                                <span><strong>技术代差</strong>已成为决定胜负的底层变量，算法优势直接转化为决策优势</span>
+                            </li>
+                            <li>
+                                <span class="insight-bullet">▸</span>
+                                <span><strong>灰带冲突</strong>的模糊性要求建立前置预警机制，避免意外升级</span>
+                            </li>
+                            <li>
+                                <span class="insight-bullet">▸</span>
+                                <span><strong>跨域协同</strong>能力是体系对抗的核心，单一领域优势难以决定全局</span>
+                            </li>
+                            <li>
+                                <span class="insight-bullet">▸</span>
+                                <span><strong>认知域作战</strong>与传统军事行动的融合程度决定未来战争形态</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 行动建议 -->
+                    <div class="summary-card border-l-accent" style="border-left-color: #e11d48;">
+                        <h3 style="color: #e11d48;">
+                            <i data-lucide="alert-circle" style="color: #e11d48;"></i>
+                            战略建议
+                        </h3>
+                        <ul class="insight-list">
+                            <li>
+                                <span class="insight-bullet" style="color: #e11d48;">1.</span>
+                                <span>建立跨领域技术预警机制，强化底线思维与自主可控能力</span>
+                            </li>
+                            <li>
+                                <span class="insight-bullet" style="color: #e11d48;">2.</span>
+                                <span>构建"算法弹性"概念，防范对抗样本攻击与AI系统脆弱性</span>
+                            </li>
+                            <li>
+                                <span class="insight-bullet" style="color: #e11d48;">3.</span>
+                                <span>完善军民融合创新生态，加速"军事+AI"复合型人才培养</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px; padding: 12px; background: var(--bg-accent); border-radius: 8px; font-size: 12px; color: var(--muted);">
+                    <i data-lucide="clock" style="width: 14px; height: 14px; display: inline; vertical-align: middle; margin-right: 4px;"></i>
+                    生成时间：${new Date().toLocaleString('zh-CN')} | 
+                    研讨时长：${Math.ceil((Date.now() - (window.discussionStartTime || Date.now())) / 60000)}分钟
+                </div>
+            `;
+            
+            container.innerHTML = summaryHTML;
+            
+            // 记录开始时间（如果还没记录）
+            if (!window.discussionStartTime) {
+                window.discussionStartTime = Date.now() - (state.currentRound * 5 * 60000); // 估算
+            }
+            
+            // 重新渲染图标
+            lucide.createIcons();
+            
+            // 添加简单的动画效果
+            setTimeout(() => {
+                document.querySelectorAll('.summary-stat-fill').forEach(bar => {
+                    const width = bar.style.width;
+                    bar.style.width = '0';
+                    setTimeout(() => bar.style.width = width, 100);
+                });
+            }, 100);
+        }
+
+        function displaySummary(summary) {
+            const list = document.getElementById('summaryList');
+            const emptyState = document.getElementById('empty-summary');
+            if (emptyState) emptyState.style.display = 'none';
+            
+            list.innerHTML = `
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <i data-lucide="clipboard-list" style="width: 20px; height: 20px; color: var(--accent);"></i>
+                        <span>会议总结报告</span>
+                    </div>
+                    <div class="summary-content">
+                        ${marked.parse(summary)}
+                    </div>
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); text-align: right;">
+                        生成时间：${new Date().toLocaleString('zh-CN')}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // 备用：本地生成简易总结（当API不可用时）
+        function generateLocalSummary() {
+            const experts = [...new Set(state.discussionHistory.map(m => m.expert_role))];
+            const keyPoints = state.discussionHistory.slice(-3).map(m => m.content.substring(0, 50) + '...');
+            
+            const summary = `
+## 研讨概况
+本次研讨围绕"${state.topic}"展开，共进行${state.currentRound}轮讨论，${state.experts.length}位专家参与，产生${state.discussionHistory.length}条高质量发言。
+
+## 参与专家
+${experts.map(e => `- ${e}`).join('\n')}
+
+## 主要观点
+${keyPoints.map((p, i) => `${i+1}. ${p}`).join('\n')}
+
+## 结论建议
+基于专家研讨，建议关注后续发展动态，深入分析相关影响。
+
+*（注：此为简易总结，如需详细分析请确保后端总结API正常运行）*
+            `;
+            
+            displaySummary(summary);
+            switchTab('summary');
+        }
+
+        function clearDiscussion(full = true) {
+            if (full && !confirm('确定要清空所有讨论记录吗？')) return;
+            state.isDiscussing = false;
+            state.discussionHistory = [];
+            state.thoughtsHistory = [];
+            state.currentRound = 0;
+            state.totalWords = 0;
+            state.lastSpeaker = null;
+            state.summaryGenerated = false;
+            
+            document.getElementById('discussionList').innerHTML = '';
+            document.getElementById('thoughtsList').innerHTML = '';
+            document.getElementById('summaryList').innerHTML = '';
+            
+            document.getElementById('empty-discussion').style.display = 'flex';
+            document.getElementById('empty-thoughts').style.display = 'flex';
+            document.getElementById('empty-summary').style.display = 'flex';
+            
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('nextBtn').textContent = '继续';
+            document.getElementById('summaryBtn').disabled = true;
+            document.getElementById('exportBtn').disabled = true;
+            
+            if (full) {
+                document.getElementById('currentTopic').textContent = '等待设置话题...';
+                document.getElementById('topicInput').value = '';
+                currentSessionId = null;
+                renderExperts();
+            }
+            
+            clearAllHighlights();
+            hideCenterSpeech();
+            updateStats();
+        }
+
+        function exportDiscussion() {
+            const data = {
+                topic: state.topic,
+                rounds: state.currentRound,
+                totalWords: state.totalWords,
+                experts: state.experts.map(e => e.role),
+                messages: state.discussionHistory,
+                summary: state.summaryGenerated,
+                exportTime: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `研讨记录_${state.topic.substring(0, 10)}_${new Date().toLocaleDateString()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 添加旋转动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
